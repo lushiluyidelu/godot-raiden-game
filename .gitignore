@@ -1,0 +1,18 @@
+# Godot 临时文件
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# 日志文件
+*.log
+
+# 临时备份文件
+*.bak
+*~

@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3 uid="uid://enemy123"]
+
+[ext_resource type="Script" path="res://scripts/enemy.gd" id="1_enemy"]
+
+[sub_resource type="RectangleShape2D" id="RectEnemy"]
+size = Vector2(20, 20)
+
+[node name="Enemy" type="Area2D"]
+collision_layer = 4
+collision_mask = 3
+monitoring = true
+monitorable = true
+script = ExtResource("1_enemy")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 0)
+shape = SubResource("RectEnemy")
+
+[connection signal="area_entered" from="Enemy" to="Enemy" method="_on_area_entered"]

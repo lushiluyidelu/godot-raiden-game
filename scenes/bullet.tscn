@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3 uid="uid://bullet123"]
+
+[ext_resource type="Script" path="res://scripts/bullet.gd" id="1_bullet"]
+
+[sub_resource type="RectangleShape2D" id="RectBullet"]
+size = Vector2(5, 10)
+
+[node name="Bullet" type="Area2D"]
+collision_layer = 2
+collision_mask = 28
+monitoring = true
+monitorable = true
+script = ExtResource("1_bullet")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 0)
+shape = SubResource("RectBullet")
+
+[connection signal="area_entered" from="Bullet" to="Bullet" method="_on_area_entered"]

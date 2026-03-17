@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://boss123"]
+
+[ext_resource type="Script" path="res://scripts/boss.gd" id="1_boss"]
+
+[sub_resource type="RectangleShape2D" id="RectBoss"]
+size = Vector2(60, 60)
+
+[node name="Boss" type="Area2D"]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_boss")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectBoss")
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+visible = false
+position = Vector2(-100, -40)
+custom_minimum_size = Vector2(200, 20)
+show_percentage = false
+step = 1.0
+value = 100.0
+editable = false
+
+[node name="HealthBarFill" type="TextureProgressBar" parent="HealthBar"]
+position = Vector2(0, 0)
+theme_type_variation = "ProgressBarFill"

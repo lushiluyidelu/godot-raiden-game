@@ -1,0 +1,157 @@
+# 雷电游戏 - 进度追踪
+
+## 当前状态
+
+**日期**: 2026-03-16
+**阶段**: 版本 2.0 - 关卡与道具系统
+**进度**: 阶段 1 (P0) 完成
+
+---
+
+## 已完成功能
+
+### ✅ 阶段 1 (P0): 核心系统
+
+- ✅ 关卡配置文件 (config/levels.gd)
+  - 5 关卡配置
+  - 敌人类型属性定义
+  - 关卡数据结构
+
+- ✅ WaveManager 管理器 (scripts/wave_manager.gd)
+  - 波次生成系统
+  - 敌人循环生成
+  - BOSS 生成逻辑
+  - 关卡完成判定
+
+- ✅ 道具系统基础框架 (scripts/powerup.gd, scenes/powerup.tscn)
+  - 6 种道具类型
+  - 道具漂浮逻辑
+  - 道具收集信号
+
+- ✅ 武器升级系统 (scripts/player.gd)
+  - 4 级武器等级
+  - 武器经验系统
+  - 多级子弹配置
+
+- ✅ BOSS 基础类 (scripts/boss.gd, scenes/boss.tscn)
+  - 5 种 BOSS 设计
+  - BOSS 状态机
+  - 多种攻击模式
+  - 第二阶段变身（最终 BOSS）
+
+### ✅ 敌人系统升级
+
+- ✅ 射击怪（绿色，可发射子弹）
+- ✅ 自爆怪（橙色，追踪玩家）
+- ✅ 敌人类型配置化
+
+### ✅ UI 升级
+
+- ✅ 关卡显示 (WAVE)
+- ✅ 武器等级显示 (Lv.)
+- ✅ 连击显示 (COMBO)
+- ✅ BOSS 血条
+
+### ✅ 分数系统升级
+
+- ✅ 连击倍率 (最高 3.0x)
+- ✅ 关卡完成奖励
+
+---
+
+## 待完成功能
+
+### ⏸️ 阶段 2 (P1): 敌人升级完善
+
+- [ ] 射击怪子弹逻辑完善
+- [ ] 自爆怪爆炸效果
+- [ ] BOSS 战平衡调整
+
+### ⏸️ 阶段 3 (P2): 道具系统完善
+
+- [ ] 道具掉落概率调整
+- [ ] 导弹追踪逻辑
+- [ ] 道具获得特效
+
+### ⏸️ 阶段 4 (P3): Polish
+
+- [ ] 关卡过渡界面
+- [ ] BOSS 战 BGM 变化
+- [ ] 连击音效/特效
+- [ ] 获得道具特效
+
+---
+
+## 文件清单
+
+### 新增文件
+- [x] config/levels.gd - 关卡配置
+- [x] scripts/wave_manager.gd - 关卡管理器
+- [x] scripts/powerup.gd - 道具逻辑
+- [x] scenes/powerup.tscn - 道具场景
+- [x] scripts/boss.gd - BOSS 逻辑
+- [x] scenes/boss.tscn - BOSS 场景
+
+### 修改文件
+- [x] scripts/player.gd - 添加武器等级和道具收集
+- [x] scripts/enemy.gd - 添加射击怪和自爆怪
+- [x] scripts/bullet.gd - 支持敌人子弹
+- [x] scripts/main.gd - 集成关卡系统
+- [x] scenes/main.tscn - 添加新 UI 元素
+- [x] project.godot - 添加输入映射和碰撞层
+
+---
+
+## 游戏参数当前值
+
+```gdscript
+# 玩家
+PLAYER_SPEED = 300
+PLAYER_MAX_HEALTH = 3
+PLAYER_INVINCIBLE_DURATION = 1.5
+
+# 武器系统
+WEAPON_LEVEL_MAX = 4
+WEAPON_XP_PER_LEVEL = [3, 6, 9, 12]
+
+# 道具
+POWERUP_DROP_RATE = 0.15  # 15%
+
+# 连击
+COMBO_TIMEOUT = 3.0  # 秒
+COMBO_MULTIPLIER = {
+    2: 1.2,
+    5: 1.5,
+    10: 2.0,
+    20: 3.0
+}
+
+# 关卡
+TOTAL_LEVELS = 5
+```
+
+---
+
+## 控制说明
+
+| 操作 | 按键 |
+|------|------|
+| 向上移动 | W / ↑ |
+| 向下移动 | S / ↓ |
+| 向左移动 | A / ← |
+| 向右移动 | D / → |
+| 射击 | 空格键 / 鼠标左键 |
+| 使用炸弹 | U 键 |
+| 重新开始 | 回车键（游戏结束后） |
+
+---
+
+## 下一步行动
+
+1. **测试**: 在 Godot 中运行游戏，测试关卡系统
+2. **调整**: 根据测试结果调整平衡性
+3. **完善**: 添加缺失的特效和音效
+
+---
+
+**最后更新**: 2026-03-16
