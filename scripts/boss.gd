@@ -29,6 +29,7 @@ func _ready():
 	connect("area_entered", _on_area_entered)
 
 	print("[BOSS] 初始化完成！血量：", health, " 攻击类型：", attack_type)
+	print("[BOSS] StateChart: ", state_chart)
 
 func set_boss_config(config: Dictionary):
 	if config.is_empty():
@@ -260,7 +261,10 @@ func _attack_multi():
 # 受伤处理
 func take_damage(amount):
 	if is_invincible:
+		print("[BOSS] 无敌状态，忽略伤害")
 		return
+
+	print("[BOSS] take_damage 调用！state_chart=", state_chart)
 
 	health -= amount
 	print("[BOSS] 受到伤害！剩余血量：", health, "/", max_health)
@@ -274,7 +278,10 @@ func take_damage(amount):
 
 	# 发送受伤事件给状态机
 	if state_chart:
+		print("[BOSS] 发送 take_damage 事件")
 		state_chart.send_event("take_damage")
+	else:
+		print("[BOSS] 警告：state_chart 为空，无法发送事件")
 
 	# 检查阶段变化（最终 BOSS）
 	if has_phase_2 and health <= max_health / 2 and phase == 1:
