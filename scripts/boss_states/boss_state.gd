@@ -13,6 +13,12 @@ func _ready():
 	# 重要：调用父类 _ready() 以初始化 _chart 变量
 	super._ready()
 
+	# 连接状态信号到自定义方法
+	state_entered.connect(_on_enter)
+	state_exited.connect(_on_exit)
+	if has_method("_on_state_physics_processing"):
+		state_physics_processing.connect(_on_state_physics_processing)
+
 	# 向上查找 BOSS 节点
 	var parent = get_parent()
 	while parent:
@@ -23,3 +29,13 @@ func _ready():
 
 func get_boss() -> Area2D:
 	return boss
+
+## 虚方法 - 子类可以重写
+func _on_enter():
+	pass
+
+func _on_exit():
+	pass
+
+func _on_state_physics_processing(_delta: float):
+	pass
