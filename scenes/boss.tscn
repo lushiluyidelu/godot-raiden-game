@@ -48,7 +48,7 @@ script = ExtResource("3_enter")
 [node name="On Enter Complete" type="Node" parent="BossStateMachine/Root/Enter"]
 script = ExtResource("transition")
 to = NodePath("../Active")
-delay_in_seconds = "1.0"
+delay_in_seconds = "0.5"
 
 [node name="Active" type="CompoundState" parent="BossStateMachine/Root"]
 script = ExtResource("compound_state")
@@ -70,11 +70,6 @@ script = ExtResource("transition")
 to = NodePath("../Move")
 delay_in_seconds = "0.1"
 
-[node name="On Hurt" type="Node" parent="BossStateMachine/Root/Active"]
-script = ExtResource("transition")
-to = NodePath("../Hurt")
-event = &"take_damage"
-
 [node name="Hurt" type="AtomicState" parent="BossStateMachine/Root"]
 script = ExtResource("6_hurt")
 
@@ -83,9 +78,14 @@ script = ExtResource("transition")
 to = NodePath("../Active")
 delay_in_seconds = "0.2"
 
-[node name="On Phase2" type="Node" parent="BossStateMachine/Root/Active"]
+[node name="On Hurt" type="Node" parent="BossStateMachine/Root"]
 script = ExtResource("transition")
-to = NodePath("../Phase2")
+to = NodePath("Hurt")
+event = &"take_damage"
+
+[node name="On Phase2" type="Node" parent="BossStateMachine/Root"]
+script = ExtResource("transition")
+to = NodePath("Phase2")
 event = &"phase2_transform"
 
 [node name="Phase2" type="CompoundState" parent="BossStateMachine/Root"]
@@ -108,14 +108,9 @@ script = ExtResource("transition")
 to = NodePath("../Move")
 delay_in_seconds = "0.1"
 
-[node name="On Phase2 Hurt" type="Node" parent="BossStateMachine/Root/Phase2"]
-script = ExtResource("transition")
-to = NodePath("../Hurt")
-event = &"take_damage"
-
 [node name="On Death" type="Node" parent="BossStateMachine/Root"]
 script = ExtResource("transition")
-to = NodePath("../Death")
+to = NodePath("Death")
 event = &"death"
 
 [node name="Death" type="AtomicState" parent="BossStateMachine/Root"]
