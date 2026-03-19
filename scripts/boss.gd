@@ -9,26 +9,21 @@ var health: int = 20
 var move_speed: float = 50.0
 var attack_type: String = "single"
 var score_value: int = 1000
-
-# 状态
-var direction: int = 1
-var state: String = "move"  # move, attack, hurt
-var attack_timer: Timer
 var is_invincible: bool = false
-
-# 子弹场景
-var bullet_scene = preload("res://scenes/bullet.tscn")
 
 # 阶段（最终 BOSS 用）
 var phase: int = 1
 var has_phase_2: bool = false
 
+# StateChart
+@onready var state_chart: Node = $BossStateMachine
+
+# 子弹场景
+var bullet_scene = preload("res://scenes/bullet.tscn")
+
 func _ready():
 	add_to_group("boss")
 	add_to_group("enemies")
-
-	# 创建 BOSS 纹理
-	_create_boss_sprite()
 
 	# 连接信号
 	connect("area_entered", _on_area_entered)
@@ -49,11 +44,20 @@ func set_boss_config(config: Dictionary):
 	has_phase_2 = max_health >= 100
 	phase = 1
 
-	# 重新创建纹理
-	_create_boss_sprite()
+	# 初始化 StateChart 表达式属性
+	if state_chart:
+		state_chart.set_expression_property("health", health)
+		state_chart.set_expression_property("max_health", max_health)
+		state_chart.set_expression_property("phase", phase)
+		state_chart.set_expression_property("move_speed", move_speed)
+		state_chart.set_expression_property("attack_interval", _get_attack_interval())
 
-	# 设置攻击定时器
-	_setup_attack_timer()
+	# 延迟启动状态机
+	_setup_state_chart.call_deferred()
+
+func _setup_state_chart():
+	if state_chart:
+		state_chart.send_event.call_deferred("initialized")
 
 func _create_boss_sprite():
 	var sprite = get_node_or_null("Sprite")
@@ -175,14 +179,6 @@ func _draw_boss_final(img: Image, color: Color, size: int):
 			if dist <= 15:
 				img.set_pixel(x, y, color.lightened(0.4))
 
-func _setup_attack_timer():
-	attack_timer = Timer.new()
-	var attack_interval = _get_attack_interval()
-	attack_timer.wait_time = attack_interval
-	attack_timer.autostart = true
-	attack_timer.timeout.connect(_on_attack_timer_timeout)
-	add_child(attack_timer)
-
 func _get_attack_interval() -> float:
 	match attack_type:
 		"single": return 1.5
@@ -192,43 +188,7 @@ func _get_attack_interval() -> float:
 		"multi": return 1.0
 	return 1.5
 
-func _process(delta):
-	# BOSS 移动逻辑
-	if state == "move":
-		_move_pattern(delta)
-
-func _move_pattern(delta):
-	match attack_type:
-		"single":
-			# 左右平移
-			position.x += move_speed * direction * delta
-			if position.x > 400 or position.x < 80:
-				direction *= -1
-		"double":
-			# 8 字飞行
-			var time = Time.get_ticks_msec() / 1000.0
-			position.x = 240 + sin(time * 2) * 150
-			position.y = 100 + cos(time * 4) * 30
-		"scatter":
-			# 缓慢上下移动
-			position.y = 100 + sin(Time.get_ticks_msec() / 500.0) * 50
-		"circle":
-			# 快速环绕
-			var time = Time.get_ticks_msec() / 1000.0
-			position.x = 240 + cos(time * 3) * 180
-			position.y = 150 + sin(time * 3) * 100
-		"multi":
-			# 复杂走位
-			var time = Time.get_ticks_msec() / 1000.0
-			position.x = 240 + sin(time * 2.5) * 160 + cos(time * 1.5) * 40
-			position.y = 120 + cos(time * 2) * 60
-
-func _on_attack_timer_timeout():
-	if is_invincible:
-		return
-
-	_perform_attack()
-
+# 攻击方法 - 由 AttackState 调用
 func _perform_attack():
 	match attack_type:
 		"single":
@@ -297,6 +257,7 @@ func _attack_multi():
 	tracking_bullet.is_enemy_bullet = true
 	get_parent().add_child(tracking_bullet)
 
+# 受伤处理
 func take_damage(amount):
 	if is_invincible:
 		return
@@ -304,19 +265,16 @@ func take_damage(amount):
 	health -= amount
 	print("[BOSS] 受到伤害！剩余血量：", health, "/", max_health)
 
+	# 更新 StateChart 属性
+	if state_chart:
+		state_chart.set_expression_property("health", health)
+
 	# 发射血量变化信号
 	boss_health_changed.emit(health, max_health)
 
-	# 受伤闪烁
-	is_invincible = true
-	var sprite = get_node_or_null("Sprite")
-	if sprite:
-		sprite.modulate = Color(1, 1, 1, 0.5)
-
-	await get_tree().create_timer(0.2).timeout
-	is_invincible = false
-	if sprite:
-		sprite.modulate = Color(1, 1, 1, 1)
+	# 发送受伤事件给状态机
+	if state_chart:
+		state_chart.send_event("take_damage")
 
 	# 检查阶段变化（最终 BOSS）
 	if has_phase_2 and health <= max_health / 2 and phase == 1:
@@ -328,21 +286,17 @@ func take_damage(amount):
 func _phase_2_transform():
 	phase = 2
 	print("[BOSS] 第二阶段变身！攻击加强！")
-	# 加快攻击速度
-	if attack_timer:
-		attack_timer.wait_time = attack_timer.wait_time * 0.6
+
+	# 发送 Phase2 事件给状态机
+	if state_chart:
+		state_chart.send_event("phase2_transform")
+		state_chart.set_expression_property("phase", phase)
 
 func _die():
-	print("[BOSS] 被击败！分数：", score_value)
-
-	# 播放爆炸音效
-	var sound_manager = get_tree().root.get_node_or_null("Main/SoundManager")
-	if sound_manager and sound_manager.has_method("play_explosion_sound"):
-		sound_manager.play_explosion_sound()
-
-	# 发射信号
-	emit_signal("boss_defeated", score_value)
-	queue_free()
+	# 发送死亡事件给状态机
+	if state_chart:
+		state_chart.send_event("death")
+	# 注意：DeathState 会处理实际的死亡逻辑和 queue_free()
 
 func _on_area_entered(area):
 	# 被子弹击中
@@ -350,6 +304,11 @@ func _on_area_entered(area):
 		var bullet = area as Area2D
 		if bullet and not bullet.is_enemy_bullet:
 			take_damage(bullet.damage if bullet.has_method("get_damage") else 1)
+
+	# 撞到玩家
+	if area.is_in_group("player"):
+		if area.has_method("take_damage"):
+			area.take_damage(1)
 
 func get_health_percent() -> float:
 	return float(health) / float(max_health)

@@ -269,5 +269,6 @@ func _on_area_entered(area):
 func _on_body_entered(body):
 	# 撞到玩家
 	if body.is_in_group("player"):
-		emit_signal("player_hit")
+		if body.has_method("take_damage"):
+			body.take_damage(1)
 		queue_free()

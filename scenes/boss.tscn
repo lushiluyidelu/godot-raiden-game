@@ -1,19 +1,125 @@
-[gd_scene format=3 uid="uid://boss123"]
+[gd_scene load_steps=7 format=3 uid="uid://boss123"]
 
 [ext_resource type="Script" path="res://scripts/boss.gd" id="1_boss"]
+[ext_resource type="Script" path="res://scripts/boss_states/boss_state.gd" id="2_boss_state"]
+[ext_resource type="Script" path="res://scripts/boss_states/enter_state.gd" id="3_enter"]
+[ext_resource type="Script" path="res://scripts/boss_states/move_state.gd" id="4_move"]
+[ext_resource type="Script" path="res://scripts/boss_states/attack_state.gd" id="5_attack"]
+[ext_resource type="Script" path="res://scripts/boss_states/hurt_state.gd" id="6_hurt"]
+[ext_resource type="Script" path="res://scripts/boss_states/phase2_state.gd" id="7_phase2"]
+[ext_resource type="Script" path="res://scripts/boss_states/death_state.gd" id="8_death"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/state_chart.gd" id="state_chart"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/compound_state.gd" id="compound_state"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/atomic_state.gd" id="atomic_state"]
+[ext_resource type="Script" path="res://addons/godot_state_charts/transition.gd" id="transition"]
 
 [sub_resource type="RectangleShape2D" id="RectBoss"]
 size = Vector2(60, 60)
 
 [node name="Boss" type="Area2D"]
 collision_layer = 16
-collision_mask = 2
+collision_mask = 3
 script = ExtResource("1_boss")
 
 [node name="Sprite" type="Sprite2D" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectBoss")
+
+[node name="BossStateMachine" type="Node" parent="."]
+script = ExtResource("state_chart")
+track_in_editor = true
+initial_expression_properties = {
+"health": 20,
+"max_health": 20,
+"phase": 1,
+"attack_interval": 1.5,
+"move_speed": 50.0,
+"is_invincible": false
+}
+
+[node name="Root" type="CompoundState" parent="BossStateMachine"]
+script = ExtResource("compound_state")
+initial_state = NodePath("Enter")
+
+[node name="Enter" type="AtomicState" parent="BossStateMachine/Root"]
+script = ExtResource("3_enter")
+
+[node name="On Enter Complete" type="Node" parent="BossStateMachine/Root/Enter"]
+script = ExtResource("transition")
+to = NodePath("../Active")
+delay_in_seconds = "1.0"
+
+[node name="Active" type="CompoundState" parent="BossStateMachine/Root"]
+script = ExtResource("compound_state")
+initial_state = NodePath("Move")
+
+[node name="Move" type="AtomicState" parent="BossStateMachine/Root/Active"]
+script = ExtResource("4_move")
+
+[node name="Attack" type="AtomicState" parent="BossStateMachine/Root/Active"]
+script = ExtResource("5_attack")
+
+[node name="On Attack Timer" type="Node" parent="BossStateMachine/Root/Active/Move"]
+script = ExtResource("transition")
+to = NodePath("../Attack")
+delay_in_seconds = "{attack_interval}"
+
+[node name="On Attack Complete" type="Node" parent="BossStateMachine/Root/Active/Attack"]
+script = ExtResource("transition")
+to = NodePath("../Move")
+delay_in_seconds = "0.1"
+
+[node name="On Hurt" type="Node" parent="BossStateMachine/Root/Active"]
+script = ExtResource("transition")
+to = NodePath("../Hurt")
+event = &"take_damage"
+
+[node name="Hurt" type="AtomicState" parent="BossStateMachine/Root"]
+script = ExtResource("6_hurt")
+
+[node name="On Hurt Complete" type="Node" parent="BossStateMachine/Root/Hurt"]
+script = ExtResource("transition")
+to = NodePath("../Active")
+delay_in_seconds = "0.2"
+
+[node name="On Phase2" type="Node" parent="BossStateMachine/Root/Active"]
+script = ExtResource("transition")
+to = NodePath("../Phase2")
+event = &"phase2_transform"
+
+[node name="Phase2" type="CompoundState" parent="BossStateMachine/Root"]
+script = ExtResource("compound_state")
+initial_state = NodePath("Move")
+
+[node name="Move" type="AtomicState" parent="BossStateMachine/Root/Phase2"]
+script = ExtResource("4_move")
+
+[node name="Attack" type="AtomicState" parent="BossStateMachine/Root/Phase2"]
+script = ExtResource("5_attack")
+
+[node name="On Attack Timer" type="Node" parent="BossStateMachine/Root/Phase2/Move"]
+script = ExtResource("transition")
+to = NodePath("../Attack")
+delay_in_seconds = "{attack_interval * 0.6}"
+
+[node name="On Attack Complete" type="Node" parent="BossStateMachine/Root/Phase2/Attack"]
+script = ExtResource("transition")
+to = NodePath("../Move")
+delay_in_seconds = "0.1"
+
+[node name="On Phase2 Hurt" type="Node" parent="BossStateMachine/Root/Phase2"]
+script = ExtResource("transition")
+to = NodePath("../Hurt")
+event = &"take_damage"
+
+[node name="On Death" type="Node" parent="BossStateMachine/Root"]
+script = ExtResource("transition")
+to = NodePath("../Death")
+event = &"death"
+
+[node name="Death" type="AtomicState" parent="BossStateMachine/Root"]
+script = ExtResource("8_death")
 
 [node name="HealthBar" type="ProgressBar" parent="."]
 visible = false

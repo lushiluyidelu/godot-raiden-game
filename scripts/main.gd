@@ -107,6 +107,10 @@ func _process(delta):
 
 	score_label.text = "分数：" + str(score)
 
+	# 测试命令：按 B 键直接生成 BOSS
+	if Input.is_action_just_pressed("spawn_test_boss"):
+		_spawn_test_boss()
+
 	# 更新连击计时器
 	if combo_count > 1:
 		combo_timer -= delta
@@ -149,6 +153,31 @@ func _draw():
 func _on_wave_started(wave_number: int):
 	print("[Main] 第 ", wave_number, " 波开始")
 	update_wave_display()
+
+# 测试用：生成 BOSS
+func _spawn_test_boss():
+	print("[Main] 测试：生成 BOSS！")
+	var boss_config = LEVEL_CONFIG.get_boss_config(1)
+	var boss_scene = preload("res://scenes/boss.tscn")
+
+	if boss_scene:
+		# 删除已有的 BOSS
+		var old_boss = get_node_or_null("Boss")
+		if old_boss:
+			old_boss.queue_free()
+
+		var boss = boss_scene.instantiate()
+		boss.set_boss_config(boss_config)
+		boss.name = "Boss"
+		boss.position = Vector2(240, 100)  # 屏幕中央上方
+		add_child(boss)
+
+		# 连接 BOSS 信号
+		await get_tree().create_timer(0.1).timeout
+		if boss and boss.has_signal("boss_health_changed"):
+			boss.boss_health_changed.connect(_on_boss_health_changed)
+
+		print("[Main] BOSS 已生成！血量：", boss.health, " 攻击类型：", boss.attack_type)
 
 func _on_wave_completed(wave_number: int):
 	print("[Main] 第 ", wave_number, " 波完成")

@@ -21,7 +21,7 @@ color_final_color = Color(1, 0.3, 0, 0)
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 1
-collision_mask = 6
+collision_mask = 22
 script = ExtResource("1_player")
 
 [node name="Sprite" type="Sprite2D" parent="."]
