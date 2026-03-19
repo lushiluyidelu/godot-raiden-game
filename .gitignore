@@ -16,3 +16,6 @@ export_presets.cfg
 # 临时备份文件
 *.bak
 *~
+
+# Claude Code
+.claude/

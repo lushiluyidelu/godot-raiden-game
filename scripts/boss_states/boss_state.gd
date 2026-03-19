@@ -10,6 +10,9 @@ func get_state_chart() -> StateChart:
 	return _chart as StateChart
 
 func _ready():
+	# 重要：调用父类 _ready() 以初始化 _chart 变量
+	super._ready()
+
 	# 向上查找 BOSS 节点
 	var parent = get_parent()
 	while parent:
