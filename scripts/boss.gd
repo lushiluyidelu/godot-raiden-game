@@ -58,7 +58,29 @@ func set_boss_config(config: Dictionary):
 
 func _setup_state_chart():
 	if state_chart:
+		# 连接状态机的 event_received 信号用于调试
+		state_chart.event_received.connect(_on_state_chart_event)
+
+		# 打印所有有效的事件名称用于调试
+		if OS.is_debug_build():
+			var StateChartUtil = load("res://addons/godot_state_charts/utilities/state_chart_util.gd")
+			if StateChartUtil:
+				var valid_events = StateChartUtil.events_of(state_chart)
+				print("[BOSS] 状态机有效事件列表：", valid_events)
+
+		# 调试：检查 On Hurt 过渡是否正确配置
+		var root = state_chart.get_node_or_null("Root")
+		if root:
+			for child in root.get_children():
+				if child.has_method("evaluate_guard") and child.get("event") == "take_damage":
+					print("[BOSS] 找到 On Hurt 过渡：target=", child.get("to"), " guard=", child.get("guard"))
+					var target = child.resolve_target()
+					print("[BOSS] On Hurt 目标状态：", target, " name=", target.name if target else "null")
+
 		state_chart.send_event.call_deferred("initialized")
+
+func _on_state_chart_event(event:StringName):
+	print("[BOSS 状态机] 收到事件：", event)
 
 func _create_boss_sprite():
 	var sprite = get_node_or_null("Sprite")
@@ -260,11 +282,11 @@ func _attack_multi():
 
 # 受伤处理
 func take_damage(amount):
+	print("[BOSS] take_damage 调用！is_invincible=", is_invincible, " state_chart=", state_chart)
+
 	if is_invincible:
 		print("[BOSS] 无敌状态，忽略伤害")
 		return
-
-	print("[BOSS] take_damage 调用！state_chart=", state_chart)
 
 	health -= amount
 	print("[BOSS] 受到伤害！剩余血量：", health, "/", max_health)
@@ -278,7 +300,7 @@ func take_damage(amount):
 
 	# 发送受伤事件给状态机
 	if state_chart:
-		print("[BOSS] 发送 take_damage 事件")
+		print("[BOSS] 发送 take_damage 事件给状态机")
 		state_chart.send_event("take_damage")
 	else:
 		print("[BOSS] 警告：state_chart 为空，无法发送事件")

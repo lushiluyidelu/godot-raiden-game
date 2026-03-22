@@ -24,8 +24,17 @@ func _ready():
 func get_boss() -> Area2D:
 	return boss
 
+## 重写 _process 方法用于调试延迟过渡
+func _process(delta: float) -> void:
+	if _pending_transition != null:
+		print("[BOSS State] _process: ", name, " pending=", _pending_transition.name, " remaining=", _pending_transition_remaining_delay)
+		if _pending_transition_remaining_delay <= 0:
+			print("[BOSS State] _process: 过渡就绪！", name, " -> ", _pending_transition.to)
+	super._process(delta)
+
 ## 重写状态进入方法 - 在信号之前调用
 func _state_enter(transition_target: StateChartState) -> void:
+	print("[BOSS State] _state_enter: ", name, " target=", transition_target.name if transition_target else "null")
 	super._state_enter(transition_target)
 	_on_enter()
 	# 连接 physics processing 信号（如果需要）
@@ -34,11 +43,18 @@ func _state_enter(transition_target: StateChartState) -> void:
 
 ## 重写状态退出方法
 func _state_exit() -> void:
+	print("[BOSS State] _state_exit: ", name)
 	_on_exit()
 	# 断开信号连接
 	if has_method("_on_state_physics_processing"):
 		state_physics_processing.disconnect(_on_state_physics_processing)
 	super._state_exit()
+
+## 重写 _process_transitions 用于调试
+func _process_transitions(trigger_type: int, event:StringName = "") -> bool:
+	var result = super._process_transitions(trigger_type, event)
+	print("[BOSS State] _process_transitions 结果：", name, " event=", event, " result=", result)
+	return result
 
 ## 虚方法 - 子类可以重写
 func _on_enter():
