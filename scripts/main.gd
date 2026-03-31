@@ -6,17 +6,30 @@ const POWERUP_SCENE = preload("res://scenes/powerup.tscn")
 const PowerUpType = preload("res://scripts/powerup.gd").PowerUpType
 const LEVEL_CONFIG = preload("res://config/levels.gd")
 
-@onready var score_label = $UI/ScoreLabel
-@onready var game_over_label = $UI/GameOverLabel
-@onready var health_label = $UI/HealthLabel
-@onready var wave_label = $UI/WaveLabel  # 新增：关卡显示
-@onready var weapon_level_label = $UI/WeaponLevelLabel  # 新增：武器等级显示
-@onready var combo_label = $UI/ComboLabel  # 新增：连击显示
-@onready var boss_health_bar = $UI/BossHealthBar  # 新增：BOSS 血条
+# UI 节点引用
+@onready var score_label = $UI/TopBar/ScoreContainer/ScoreLabel
+@onready var health_icons = [
+	$UI/TopBar/HealthContainer/HealthIcon1,
+	$UI/TopBar/HealthContainer/HealthIcon2,
+	$UI/TopBar/HealthContainer/HealthIcon3
+]
+@onready var wave_label = $UI/WaveLabel
+@onready var weapon_label = $UI/BottomBar/WeaponLabel
+@onready var bomb_count_label = $UI/BottomBar/BombContainer/BombCount
+@onready var combo_label = $UI/ComboLabel
+@onready var boss_health_bar = $UI/BossHealthBar
+@onready var boss_name_label = $UI/BossHealthBar/BossNameLabel
+@onready var game_over_overlay = $UI/GameOverOverlay
+@onready var game_over_label = $UI/GameOverOverlay/GameOverVBox/GameOverLabel
+@onready var final_score_label = $UI/GameOverOverlay/GameOverVBox/FinalScoreLabel
+@onready var pause_overlay = $UI/PauseOverlay
+@onready var wave_message = $UI/WaveMessage
+@onready var warning_message = $UI/WarningMessage
 
 var score = 0
 var game_over = false
 var level_complete = false
+var is_paused = false
 
 # 生命值系统
 var player_health = 3
@@ -96,16 +109,27 @@ func _connect_boss_signal():
 		boss.boss_health_changed.connect(_on_boss_health_changed)
 
 func _process(delta):
+	# 暂停处理（ESC键）
+	if Input.is_action_just_pressed("ui_cancel"):
+		if not game_over:
+			toggle_pause()
+		return
+
 	if game_over:
-		game_over_label.visible = true
+		game_over_overlay.visible = true
+		final_score_label.text = "最终分数：" + str(score)
+		# 回车键重新开始
 		if Input.is_action_just_pressed("ui_accept"):
 			get_tree().reload_current_scene()
+		return
+
+	if is_paused:
 		return
 
 	if level_complete:
 		return
 
-	score_label.text = "分数：" + str(score)
+	score_label.text = str(score)
 
 	# 测试命令：按 B 键直接生成 BOSS
 	if Input.is_action_just_pressed("spawn_test_boss"):
@@ -154,6 +178,9 @@ func _on_wave_started(wave_number: int):
 	print("[Main] 第 ", wave_number, " 波开始")
 	update_wave_display()
 
+	# 显示 WAVE 提示
+	show_wave_message(str(current_level) + "-" + str(wave_number))
+
 # 测试用：生成 BOSS
 func _spawn_test_boss():
 	print("[Main] 测试：生成 BOSS！")
@@ -184,6 +211,13 @@ func _on_wave_completed(wave_number: int):
 
 func _on_boss_spawned():
 	print("[Main] BOSS 战开始!")
+
+	# 显示警告动画
+	show_warning_message("BOSS")
+
+	# 等待警告动画完成
+	await get_tree().create_timer(1.5).timeout
+
 	if boss_health_bar:
 		boss_health_bar.visible = true
 		boss_health_bar.value = 100.0
@@ -214,7 +248,8 @@ func _on_level_completed(level: int):
 	else:
 		# 游戏通关
 		game_over = true
-		game_over_label.text = "游戏通关!\n最终分数：" + str(score)
+		game_over_label.text = "游戏通关!"
+		final_score_label.text = "最终分数：" + str(score)
 
 # 敌人被击毁
 func _on_enemy_destroyed(enemy_position: Vector2, score_value: int):
@@ -313,25 +348,29 @@ func player_hit():
 
 # UI 更新函数
 func update_health_display():
-	var hearts = ""
-	for i in range(max_health):
+	"""更新生命值图标显示"""
+	for i in range(health_icons.size()):
 		if i < player_health:
-			hearts += "❤️"
+			health_icons[i].modulate = Color(1, 1, 1, 1)  # 正常显示
 		else:
-			hearts += "🖤"
-	health_label.text = hearts
+			health_icons[i].modulate = Color(0.3, 0.3, 0.3, 0.5)  # 灰色半透明
 
 func update_wave_display():
 	if wave_label:
 		wave_label.text = "WAVE " + str(current_level) + "-" + str(wave_manager.get_current_wave() if wave_manager else 0)
 
 func update_weapon_level_display():
-	if weapon_level_label:
+	if weapon_label:
 		var player = get_node_or_null("Player")
-		if player:
-			weapon_level_label.text = "Lv." + str(player.weapon_level)
-		else:
-			weapon_level_label.text = "Lv.1"
+		var level = player.weapon_level if player and "weapon_level" in player else 1
+		weapon_label.text = "武器 Lv." + str(level)
+
+func update_bomb_display():
+	"""更新炸弹数量显示"""
+	if bomb_count_label:
+		var player = get_node_or_null("Player")
+		var bombs = player.bombs if player and "bombs" in player else 0
+		bomb_count_label.text = "x" + str(bombs)
 
 func update_combo_display():
 	if combo_label:
@@ -340,3 +379,41 @@ func update_combo_display():
 			combo_label.visible = true
 		else:
 			combo_label.visible = false
+
+# === 暂停功能 ===
+func toggle_pause():
+	"""切换暂停状态"""
+	is_paused = not is_paused
+	pause_overlay.visible = is_paused
+	get_tree().paused = is_paused
+	print("[Main] 游戏暂停：", is_paused)
+
+# === 过渡动画 ===
+func show_wave_message(wave: String):
+	"""显示关卡波次提示"""
+	wave_message.text = "WAVE " + wave
+	wave_message.modulate.a = 0
+	wave_message.visible = true
+
+	var tween = create_tween()
+	tween.tween_property(wave_message, "modulate:a", 1.0, 0.3)
+	tween.tween_interval(1.0)
+	tween.tween_property(wave_message, "modulate:a", 0.0, 0.3)
+	tween.tween_callback(func(): wave_message.visible = false)
+
+func show_warning_message(boss_name: String = ""):
+	"""显示BOSS警告"""
+	warning_message.text = "WARNING!"
+	warning_message.modulate.a = 0
+	warning_message.visible = true
+
+	var tween = create_tween()
+	tween.set_loops(3)  # 闪烁3次
+	tween.tween_property(warning_message, "modulate:a", 1.0, 0.2)
+	tween.tween_property(warning_message, "modulate:a", 0.0, 0.2)
+	tween.tween_callback(func():
+		warning_message.visible = false
+		if boss_name != "" and boss_name_label:
+			boss_name_label.text = boss_name
+			boss_name_label.visible = true
+	)

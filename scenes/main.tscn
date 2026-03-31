@@ -1,9 +1,24 @@
-[gd_scene load_steps=6 format=3 uid="uid://main123"]
+[gd_scene load_steps=9 format=3 uid="uid://main123"]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="3_enemy"]
 [ext_resource type="Script" path="res://scripts/sound_manager.gd" id="4_sound"]
+[ext_resource type="Texture2D" path="res://assets/sprites/kenney_space-shooter-redux/PNG/UI/playerLife1_blue.png" id="5_life"]
+[ext_resource type="Texture2D" path="res://assets/sprites/kenney_space-shooter-redux/PNG/Power-ups/powerupRed.png" id="6_bomb"]
+[ext_resource type="Script" path="res://scripts/ui/pause_overlay.gd" id="7_pause"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_score"]
+font_size = 24
+font_color = Color(1, 1, 1, 1)
+outline_size = 2
+outline_color = Color(0, 0, 0, 0.5)
+
+[sub_resource type="LabelSettings" id="LabelSettings_wave"]
+font_size = 20
+font_color = Color(1, 1, 0, 1)
+outline_size = 2
+outline_color = Color(0, 0, 0, 0.5)
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -16,40 +31,59 @@ script = ExtResource("4_sound")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
-[node name="ScoreLabel" type="Label" parent="UI"]
+# === 顶部信息栏 ===
+[node name="TopBar" type="HBoxContainer" parent="UI"]
 offset_left = 10.0
 offset_top = 10.0
-offset_right = 200.0
+offset_right = 470.0
 offset_bottom = 40.0
-text = "分数：0"
-theme_override_font_sizes/font_size = 24
 
+[node name="ScoreContainer" type="HBoxContainer" parent="UI/TopBar"]
+layout_mode = 2
+
+[node name="ScoreIcon" type="TextureRect" parent="UI/TopBar/ScoreContainer"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="ScoreLabel" type="Label" parent="UI/TopBar/ScoreContainer"]
+layout_mode = 2
+text = "0"
+label_settings = SubResource("LabelSettings_score")
+
+[node name="Spacer" type="Control" parent="UI/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HealthContainer" type="HBoxContainer" parent="UI/TopBar"]
+layout_mode = 2
+
+[node name="HealthIcon1" type="TextureRect" parent="UI/TopBar/HealthContainer"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("5_life")
+stretch_mode = 4
+
+[node name="HealthIcon2" type="TextureRect" parent="UI/TopBar/HealthContainer"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("5_life")
+stretch_mode = 4
+
+[node name="HealthIcon3" type="TextureRect" parent="UI/TopBar/HealthContainer"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("5_life")
+stretch_mode = 4
+
+# === 关卡信息 ===
 [node name="WaveLabel" type="Label" parent="UI"]
 offset_left = 10.0
 offset_top = 45.0
 offset_right = 150.0
 offset_bottom = 75.0
 text = "WAVE 1"
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(1, 1, 0, 1)
-
-[node name="WeaponLevelLabel" type="Label" parent="UI"]
-offset_left = 10.0
-offset_top = 680.0
-offset_right = 120.0
-offset_bottom = 710.0
-text = "Lv.1"
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(1, 0.8, 0, 1)
-
-[node name="HealthLabel" type="Label" parent="UI"]
-offset_left = 380.0
-offset_top = 10.0
-offset_right = 470.0
-offset_bottom = 40.0
-text = "❤️❤️❤️"
-theme_override_font_sizes/font_size = 24
-horizontal_alignment = 2
+label_settings = SubResource("LabelSettings_wave")
 
 [node name="ComboLabel" type="Label" parent="UI"]
 visible = false
@@ -62,24 +96,184 @@ theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(1, 0.5, 0, 1)
 horizontal_alignment = 2
 
+# === BOSS 血条 ===
 [node name="BossHealthBar" type="ProgressBar" parent="UI"]
 visible = false
 offset_left = 140.0
 offset_top = 70.0
 offset_right = 340.0
 offset_bottom = 90.0
-theme_override_styles/background = null
-theme_override_styles/fill = null
 value = 100.0
 max_value = 100.0
 show_percentage = false
 
-[node name="GameOverLabel" type="Label" parent="UI"]
+[node name="BossNameLabel" type="Label" parent="UI/BossHealthBar"]
 visible = false
-offset_left = 140.0
-offset_top = 300.0
-offset_right = 340.0
-offset_bottom = 380.0
-text = "游戏结束！\n按回车键重新开始"
-theme_override_font_sizes/font_size = 20
-horizontal_alignment = 2
+offset_left = 0.0
+offset_top = -25.0
+offset_right = 200.0
+offset_bottom = -5.0
+text = "BOSS"
+horizontal_alignment = 1
+
+# === 过渡动画 ===
+[node name="WaveMessage" type="Label" parent="UI"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -30.0
+offset_right = 150.0
+offset_bottom = 30.0
+text = "WAVE 1-1"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 36
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+
+[node name="WarningMessage" type="Label" parent="UI"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -30.0
+offset_right = 150.0
+offset_bottom = 30.0
+text = "WARNING!"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 48
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+offset_bottom = -5.0
+text = "BOSS"
+horizontal_alignment = 1
+
+# === 底部信息栏 ===
+[node name="BottomBar" type="HBoxContainer" parent="UI"]
+offset_left = 10.0
+offset_top = 680.0
+offset_right = 470.0
+offset_bottom = 710.0
+
+[node name="WeaponLabel" type="Label" parent="UI/BottomBar"]
+layout_mode = 2
+text = "武器 Lv.1"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.8, 0, 1)
+
+[node name="Spacer2" type="Control" parent="UI/BottomBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BombContainer" type="HBoxContainer" parent="UI/BottomBar"]
+layout_mode = 2
+
+[node name="BombIcon" type="TextureRect" parent="UI/BottomBar/BombContainer"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+texture = ExtResource("6_bomb")
+stretch_mode = 4
+
+[node name="BombCount" type="Label" parent="UI/BottomBar/BombContainer"]
+layout_mode = 2
+text = "x0"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.3, 0, 1)
+
+# === 游戏结束界面 ===
+[node name="GameOverOverlay" type="ColorRect" parent="UI"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 480.0
+offset_bottom = 720.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="GameOverVBox" type="VBoxContainer" parent="UI/GameOverOverlay"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = -100.0
+offset_right = 120.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="GameOverLabel" type="Label" parent="UI/GameOverOverlay/GameOverVBox"]
+layout_mode = 2
+text = "游戏结束"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 32
+
+[node name="FinalScoreLabel" type="Label" parent="UI/GameOverOverlay/GameOverVBox"]
+layout_mode = 2
+text = "最终分数：0"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="Spacer3" type="Control" parent="UI/GameOverOverlay/GameOverVBox"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="RestartLabel" type="Label" parent="UI/GameOverOverlay/GameOverVBox"]
+layout_mode = 2
+text = "按回车键重新开始
+按 ESC 返回主菜单"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+# === 暂停界面 ===
+[node name="PauseOverlay" type="ColorRect" parent="UI"]
+visible = false
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 480.0
+offset_bottom = 720.0
+color = Color(0, 0, 0, 0.5)
+script = ExtResource("7_pause")
+
+[node name="PauseVBox" type="VBoxContainer" parent="UI/PauseOverlay"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -80.0
+offset_right = 100.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="PauseLabel" type="Label" parent="UI/PauseOverlay/PauseVBox"]
+layout_mode = 2
+text = "暂停"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 32
+
+[node name="Spacer4" type="Control" parent="UI/PauseOverlay/PauseVBox"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="PauseHint" type="Label" parent="UI/PauseOverlay/PauseVBox"]
+layout_mode = 2
+text = "按 ESC 继续游戏
+按 Q 返回主菜单"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
