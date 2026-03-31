@@ -25,6 +25,14 @@ func _ready():
 			break
 		parent = parent.get_parent()
 
+	# 重要：手动刷新所有过渡的缓存，因为插件在某些情况下不会自动刷新
+	# 这必须在 _ready 中完成，确保过渡的 _supported_trigger_types 正确设置
+	for child in get_children():
+		if child is Transition:
+			if child.has_method("_refresh_caches"):
+				child._refresh_caches()
+				print("[BOSS State] 初始化刷新过渡缓存：", child.name, " _supported_trigger_types=", child._supported_trigger_types)
+
 func get_boss() -> Area2D:
 	return boss
 
