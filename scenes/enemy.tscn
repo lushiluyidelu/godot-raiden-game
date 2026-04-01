@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/enemy.gd" id="1_enemy"]
 
 [sub_resource type="RectangleShape2D" id="RectEnemy"]
-size = Vector2(20, 20)
+size = Vector2(35, 35)
 
 [node name="Enemy" type="Area2D"]
 collision_layer = 4

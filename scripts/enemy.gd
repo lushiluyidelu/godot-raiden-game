@@ -17,6 +17,15 @@ var bullet_scene = preload("res://scenes/bullet.tscn")
 # 自爆怪专用
 var is_kamikaze = false
 
+# 精灵资源映射
+const ENEMY_SPRITES = {
+	"normal": "res://assets/sprites/kenney_space-shooter-redux/PNG/Enemies/enemyRed1.png",
+	"fast": "res://assets/sprites/kenney_space-shooter-redux/PNG/Enemies/enemyBlue1.png",
+	"heavy": "res://assets/sprites/kenney_space-shooter-redux/PNG/Enemies/enemyBlack3.png",
+	"shooter": "res://assets/sprites/kenney_space-shooter-redux/PNG/Enemies/enemyGreen2.png",
+	"kamikaze": "res://assets/sprites/kenney_space-shooter-redux/PNG/Enemies/enemyRed5.png"
+}
+
 signal enemy_defeated(score_val: int)
 signal enemy_destroyed(position: Vector2, score_val: int)
 signal player_hit
@@ -40,7 +49,7 @@ func set_enemy_type(type_name: String, type_config: Dictionary):
 	elif type_name == "kamikaze":
 		is_kamikaze = true
 
-	_create_sprite(enemy_color, _get_size_for_type(type_name))
+	_create_sprite()
 
 func _ready():
 	add_to_group("enemies")
@@ -52,148 +61,19 @@ func _ready():
 
 	print("[Enemy] 初始化完成，类型：", enemy_type)
 
-func _get_size_for_type(type_name: String) -> float:
-	match type_name:
-		"normal": return 48
-		"fast": return 40
-		"heavy": return 56
-		"shooter": return 50
-		"kamikaze": return 36
-	return 48
-
-func _create_sprite(color: Color, size: float):
+func _create_sprite():
 	var sprite = get_node_or_null("Sprite")
 	if not sprite:
 		return
 
-	var img = Image.create(int(size), int(size), false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))  # 透明背景
-
-	var half = size / 2
-
-	# 根据敌人类型绘制不同形状
-	match enemy_type:
-		"normal":
-			_draw_triangle(img, color, size)
-		"fast":
-			_draw_thin_triangle(img, color, size)
-		"heavy":
-			_draw_heavy_triangle(img, color, size)
-		"shooter":
-			_draw_shooter_sprite(img, color, size)
-		"kamikaze":
-			_draw_kamikaze_sprite(img, color, size)
-
-	var texture = ImageTexture.create_from_image(img)
-	sprite.texture = texture
-
-func _draw_triangle(img: Image, base_color: Color, size: float):
-	var half = size / 2
-	for y in range(int(size * 0.15), int(size * 0.8)):
-		var t = float(y - int(size * 0.15)) / (int(size * 0.65))
-		var width = int(lerp(size * 0.15, size * 0.45, t))
-		var c = base_color.lerp(_color_dark(base_color, 0.4), t)
-		for x in range(int(half - width), int(half + width)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, c)
-	# 机翼
-	for y in range(int(size * 0.4), int(size * 0.7)):
-		for x in range(int(half - size * 0.45 - size * 0.1), int(half - size * 0.45)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.2))
-		for x in range(int(half + size * 0.45), int(half + size * 0.45 + size * 0.1)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.2))
-
-func _draw_thin_triangle(img: Image, base_color: Color, size: float):
-	var half = size / 2
-	for y in range(int(size * 0.1), int(size * 0.85)):
-		var t = float(y - int(size * 0.1)) / (int(size * 0.75))
-		var width = int(lerp(size * 0.08, size * 0.35, t))
-		var c = base_color.lerp(_color_dark(base_color, 0.3), t)
-		for x in range(int(half - width), int(half + width)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, c)
-	# 细长机翼
-	for y in range(int(size * 0.3), int(size * 0.6)):
-		for x in range(int(half - size * 0.35 - size * 0.15), int(half - size * 0.35)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.2))
-		for x in range(int(half + size * 0.35), int(half + size * 0.35 + size * 0.15)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.2))
-
-func _draw_heavy_triangle(img: Image, base_color: Color, size: float):
-	var half = size / 2
-	# 主体三角形
-	for y in range(int(size * 0.1), int(size * 0.85)):
-		var t = float(y - int(size * 0.1)) / (int(size * 0.75))
-		var width = int(lerp(size * 0.2, size * 0.5, t))
-		var c = base_color.lerp(_color_dark(base_color, 0.4), t)
-		for x in range(int(half - width), int(half + width)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, c)
-	# 厚重机翼
-	for y in range(int(size * 0.35), int(size * 0.75)):
-		for x in range(int(half - size * 0.5 - size * 0.15), int(half - size * 0.5)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.2))
-		for x in range(int(half + size * 0.5), int(half + size * 0.5 + size * 0.15)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.2))
-	# 驾驶舱（亮色）
-	for y in range(int(size * 0.25), int(size * 0.45)):
-		for x in range(int(half - size * 0.1), int(half + size * 0.1)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_light(base_color, 0.3))
-
-func _draw_shooter_sprite(img: Image, base_color: Color, size: float):
-	var half = size / 2
-	# 主体 - 带炮管的形状
-	for y in range(int(size * 0.2), int(size * 0.8)):
-		var t = float(y - int(size * 0.2)) / (int(size * 0.6))
-		var width = int(lerp(size * 0.25, size * 0.45, t))
-		var c = base_color.lerp(_color_dark(base_color, 0.3), t)
-		for x in range(int(half - width), int(half + width)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, c)
-	# 炮管（深绿色）
-	for y in range(int(size * 0.1), int(size * 0.5)):
-		for x in range(int(half - size * 0.08), int(half + size * 0.08)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.5))
-	# 机翼
-	for y in range(int(size * 0.4), int(size * 0.7)):
-		for x in range(int(half - size * 0.45 - size * 0.12), int(half - size * 0.45)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.2))
-		for x in range(int(half + size * 0.45), int(half + size * 0.45 + size * 0.12)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.2))
-
-func _draw_kamikaze_sprite(img: Image, base_color: Color, size: float):
-	var half = size / 2
-	# 小型尖刺形状
-	for y in range(int(size * 0.15), int(size * 0.85)):
-		var t = float(y - int(size * 0.15)) / (int(size * 0.7))
-		var width = int(lerp(size * 0.1, size * 0.35, 1 - t * 0.5))
-		var c = base_color.lerp(_color_dark(base_color, 0.3), t)
-		for x in range(int(half - width), int(half + width)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, c)
-	# 尖刺机翼
-	for y in range(int(size * 0.3), int(size * 0.6)):
-		for x in range(int(half - size * 0.35 - size * 0.15), int(half - size * 0.35 + size * 0.1)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.3))
-		for x in range(int(half + size * 0.35 - size * 0.1), int(half + size * 0.35 + size * 0.15)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, _color_dark(base_color, 0.3))
-	# 红色核心
-	for y in range(int(size * 0.35), int(size * 0.55)):
-		for x in range(int(half - size * 0.12), int(half + size * 0.12)):
-			if x >= 0 and x < size:
-				img.set_pixel(x, y, Color(1, 0.3, 0.3, 1))
+	# 使用 kenney 精灵资源
+	var sprite_path = ENEMY_SPRITES.get(enemy_type, ENEMY_SPRITES["normal"])
+	var texture = load(sprite_path)
+	if texture:
+		sprite.texture = texture
+		sprite.scale = Vector2(0.8, 0.8)  # 适当缩放
+	else:
+		push_warning("[Enemy] 无法加载精灵: " + sprite_path)
 
 func _setup_shoot_timer():
 	shoot_timer = Timer.new()
@@ -213,12 +93,6 @@ func _on_shoot_timer_timeout():
 		bullet.velocity = Vector2(0, 200)  # 向下飞行
 		bullet.set_is_enemy_bullet(true)
 		get_parent().add_child(bullet)
-
-func _color_dark(c: Color, amount: float) -> Color:
-	return c.lerp(Color(0, 0, 0, 1), amount)
-
-func _color_light(c: Color, amount: float) -> Color:
-	return c.lerp(Color(1, 1, 1, 1), amount)
 
 func _process(delta):
 	if is_kamikaze:
